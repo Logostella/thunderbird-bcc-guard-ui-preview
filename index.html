@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>送信前確認画面のUI案 | Thunderbird BCC Guard</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font: 16px/1.55 "Segoe UI", "Yu Gothic UI", sans-serif;
+            color: #202124;
+            background: #f3f5f8;
+            font-synthesis: none;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px 20px 48px;
+        }
+
+        .page {
+            width: min(100%, 920px);
+            margin: 0 auto;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: #596579;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.55rem, 4vw, 2rem);
+            line-height: 1.25;
+        }
+
+        .intro {
+            margin: 10px 0 22px;
+            color: #4c5668;
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .tab {
+            min-height: 42px;
+            padding: 9px 16px;
+            border: 1px solid #c7ced9;
+            border-radius: 9px;
+            background: #fff;
+            color: #293446;
+            font: inherit;
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        .tab[aria-selected="true"] {
+            border-color: #245db5;
+            background: #245db5;
+            color: #fff;
+        }
+
+        .tab:focus-visible,
+        button:focus-visible {
+            outline: 3px solid #82b5ff;
+            outline-offset: 2px;
+        }
+
+        .candidate {
+            padding: clamp(18px, 4vw, 30px);
+            border: 1px solid #d9dee7;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 12px 35px rgb(35 49 71 / 9%);
+        }
+
+        .candidate[hidden] {
+            display: none;
+        }
+
+        .candidate-heading {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px 16px;
+            margin-bottom: 18px;
+        }
+
+        .candidate-heading h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .candidate-heading p {
+            margin: 0;
+            color: #596579;
+            font-size: 0.9rem;
+        }
+
+        .dialog {
+            max-width: 660px;
+            margin: 0 auto;
+            overflow: hidden;
+            border: 1px solid #d9dee7;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .dialog-header {
+            padding: 22px 24px 14px;
+        }
+
+        .dialog-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .dialog-header p {
+            margin: 7px 0 0;
+            color: #505a69;
+        }
+
+        .visibility-note {
+            margin: 0 24px 18px;
+            padding: 11px 13px;
+            border-left: 4px solid #4d78b8;
+            border-radius: 4px;
+            background: #f1f6fd;
+            color: #2d405b;
+            font-size: 0.92rem;
+        }
+
+        .recipient-groups {
+            display: grid;
+            gap: 10px;
+            padding: 0 24px 20px;
+        }
+
+        .empty-address {
+            color: #697386;
+            font-size: 0.9rem;
+        }
+
+        .count-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 24px 14px;
+        }
+
+        .count-summary span {
+            padding: 4px 9px;
+            border: 1px solid #dce1e8;
+            border-radius: 999px;
+            background: #f8f9fb;
+            color: #374151;
+            font-size: 0.84rem;
+            font-weight: 650;
+        }
+
+        .recipient-group {
+            display: grid;
+            grid-template-columns: 74px minmax(0, 1fr);
+            gap: 12px;
+            align-items: start;
+        }
+
+        .group-label {
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .group-label small {
+            display: block;
+            color: #697386;
+            font-size: 0.76rem;
+            font-weight: 500;
+        }
+
+        .address-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .address {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 7px;
+            padding: 5px 9px;
+            border: 1px solid #dce1e8;
+            border-radius: 7px;
+            background: #f8f9fb;
+            overflow-wrap: anywhere;
+        }
+
+        .address.unapproved {
+            border-color: #e4a3a3;
+            background: #fff5f5;
+            color: #b42318;
+            font-weight: 650;
+        }
+
+        .warning-tag {
+            padding: 1px 6px;
+            border-radius: 999px;
+            background: #b42318;
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .dialog-footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 9px;
+            padding: 15px 24px 20px;
+            border-top: 1px solid #e7eaf0;
+            background: #fbfcfd;
+        }
+
+        .action {
+            min-height: 40px;
+            padding: 8px 14px;
+            border: 1px solid #c7ced9;
+            border-radius: 7px;
+            background: #fff;
+            color: #293446;
+            font: inherit;
+            font-weight: 650;
+            cursor: default;
+        }
+
+        .action.primary {
+            border-color: #245db5;
+            background: #245db5;
+            color: #fff;
+        }
+
+        .alert-summary {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin: 0 24px 18px;
+            padding: 14px;
+            border: 1px solid #efc1bd;
+            border-radius: 9px;
+            background: #fff5f4;
+        }
+
+        .alert-icon {
+            display: grid;
+            flex: 0 0 28px;
+            width: 28px;
+            height: 28px;
+            place-items: center;
+            border-radius: 50%;
+            background: #b42318;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .alert-summary strong {
+            display: block;
+            color: #9f1d16;
+        }
+
+        .alert-summary p {
+            margin: 3px 0 0;
+            color: #5c3431;
+            font-size: 0.9rem;
+        }
+
+        .alert-summary .address {
+            margin-top: 8px;
+            border-color: #e4a3a3;
+            background: #fff;
+            color: #b42318;
+        }
+
+        .compact-recipients {
+            display: grid;
+            gap: 9px;
+            padding: 0 24px 20px;
+        }
+
+        .compact-row {
+            display: grid;
+            grid-template-columns: 98px minmax(0, 1fr);
+            gap: 10px;
+            align-items: baseline;
+        }
+
+        .compact-row strong {
+            color: #374151;
+        }
+
+        .compact-row p {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .inline-unapproved {
+            color: #b42318;
+            font-weight: 700;
+            text-decoration: underline;
+            text-decoration-color: #e4a3a3;
+            text-underline-offset: 3px;
+        }
+
+        .table-wrap {
+            padding: 0 24px 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+
+        th,
+        td {
+            padding: 11px 9px;
+            border-bottom: 1px solid #e7eaf0;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f5f7fa;
+            color: #465164;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        td:first-child {
+            overflow-wrap: anywhere;
+        }
+
+        .type-pill {
+            display: inline-block;
+            min-width: 42px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #edf1f7;
+            color: #34445b;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .visibility {
+            color: #364152;
+        }
+
+        .status-unapproved {
+            color: #b42318;
+            font-weight: 700;
+        }
+
+        .status-allowed {
+            color: #27734a;
+        }
+
+        .status-excluded {
+            color: #596579;
+        }
+
+        .preview-note {
+            margin: 14px 0 0;
+            color: #667085;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 22px 12px 32px;
+            }
+
+            .recipient-group {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+
+            .group-label small {
+                display: inline;
+                margin-left: 5px;
+            }
+
+            .dialog-header,
+            .visibility-note,
+            .recipient-groups,
+            .alert-summary,
+            .compact-recipients,
+            .table-wrap {
+                margin-right: 16px;
+                margin-left: 16px;
+            }
+
+            .recipient-groups,
+            .count-summary,
+            .compact-recipients,
+            .table-wrap {
+                padding-right: 0;
+                padding-left: 0;
+            }
+
+            .dialog-header {
+                padding-right: 0;
+                padding-left: 0;
+            }
+
+            .visibility-note {
+                margin-right: 16px;
+                margin-left: 16px;
+            }
+
+            .dialog-footer {
+                padding-right: 16px;
+                padding-left: 16px;
+            }
+
+            .compact-row {
+                grid-template-columns: 76px minmax(0, 1fr);
+            }
+
+            th,
+            td {
+                padding: 9px 7px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <p class="eyebrow">Thunderbird BCC Guard / UI Preview</p>
+        <h1>送信前確認画面の候補</h1>
+        <p class="intro">
+            A・B・Cを切り替えてご確認ください。サンプルでは、To/Ccのうちホワイトリスト外の宛先を赤字で示しています。
+        </p>
+
+        <div class="tabs" role="tablist" aria-label="確認画面の候補">
+            <button class="tab" id="tab-a" type="button" role="tab" aria-selected="true" aria-controls="candidate-a" tabindex="0">A：宛先別リスト</button>
+            <button class="tab" id="tab-b" type="button" role="tab" aria-selected="false" aria-controls="candidate-b" tabindex="-1">B：未許可宛先を強調</button>
+            <button class="tab" id="tab-c" type="button" role="tab" aria-selected="false" aria-controls="candidate-c" tabindex="-1">C：見え方の表</button>
+        </div>
+
+        <section class="candidate" id="candidate-a" role="tabpanel" aria-labelledby="tab-a">
+            <div class="candidate-heading">
+                <h2>A：宛先別リスト</h2>
+                <p>To・Cc・Bccを分け、宛先全体を見渡す構成</p>
+            </div>
+            <div class="dialog">
+                <header class="dialog-header">
+                    <h3>送信前に宛先を確認してください</h3>
+                    <p>To / Cc に複数の宛先があります。BCC を設定せずに送信しますか？</p>
+                </header>
+                <p class="visibility-note">To / Cc の宛先は互いに表示されます。Bcc の宛先は To / Cc の受信者には表示されません。</p>
+                <div class="recipient-groups">
+                    <div class="recipient-group">
+                        <div class="group-label">To <small>2件</small></div>
+                        <ul class="address-list">
+                            <li class="address unapproved">alice@outside.example <span class="warning-tag">未許可</span></li>
+                            <li class="address">bob@example.com</li>
+                        </ul>
+                    </div>
+                    <div class="recipient-group">
+                        <div class="group-label">Cc <small>1件</small></div>
+                        <ul class="address-list">
+                            <li class="address">team@example.com</li>
+                        </ul>
+                    </div>
+                    <div class="recipient-group">
+                        <div class="group-label">Bcc <small>0件</small></div>
+                        <span class="empty-address">未設定</span>
+                    </div>
+                </div>
+                <footer class="dialog-footer">
+                    <button class="action primary" type="button">内容を確認して送信する</button>
+                    <button class="action" type="button">送信を取り消す</button>
+                </footer>
+            </div>
+        </section>
+
+        <section class="candidate" id="candidate-b" role="tabpanel" aria-labelledby="tab-b" hidden>
+            <div class="candidate-heading">
+                <h2>B：未許可宛先を強調</h2>
+                <p>注意が必要な宛先を先に知らせ、通常の一覧は簡潔に表示</p>
+            </div>
+            <div class="dialog">
+                <header class="dialog-header">
+                    <h3>送信前に宛先を確認してください</h3>
+                    <p>To / Cc に複数の宛先があります。BCC を設定せずに送信しますか？</p>
+                </header>
+                <div class="alert-summary">
+                    <span class="alert-icon" aria-hidden="true">!</span>
+                    <div>
+                        <strong>ホワイトリスト外の可視宛先：1件</strong>
+                        <p>このアドレスは To に含まれ、他の To / Cc 宛先にも表示されます。</p>
+                        <span class="address">alice@outside.example <span class="warning-tag">未許可・To</span></span>
+                    </div>
+                </div>
+                <p class="visibility-note">Bcc は未設定です。To / Cc に入力した宛先は、互いに表示されます。</p>
+                <div class="compact-recipients">
+                    <div class="compact-row"><strong>To（2件）</strong><p><span class="inline-unapproved">alice@outside.example</span>, bob@example.com</p></div>
+                    <div class="compact-row"><strong>Cc（1件）</strong><p>team@example.com</p></div>
+                    <div class="compact-row"><strong>Bcc（0件）</strong><p>未設定</p></div>
+                </div>
+                <footer class="dialog-footer">
+                    <button class="action primary" type="button">内容を確認して送信する</button>
+                    <button class="action" type="button">送信を取り消す</button>
+                </footer>
+            </div>
+        </section>
+
+        <section class="candidate" id="candidate-c" role="tabpanel" aria-labelledby="tab-c" hidden>
+            <div class="candidate-heading">
+                <h2>C：見え方の表</h2>
+                <p>宛先ごとに種別・公開範囲・ホワイトリスト判定を比較</p>
+            </div>
+            <div class="dialog">
+                <header class="dialog-header">
+                    <h3>送信前に宛先を確認してください</h3>
+                    <p>To / Cc に複数の宛先があります。BCC を設定せずに送信しますか？</p>
+                </header>
+                <p class="visibility-note">Bcc は未設定です。To / Cc に入力した宛先は、互いに表示されます。</p>
+                <div class="count-summary" aria-label="宛先件数">
+                    <span>To：2件</span><span>Cc：1件</span><span>Bcc：0件</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">宛先</th><th scope="col">種別</th><th scope="col">他の宛先から見える</th><th scope="col">判定</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="status-unapproved">alice@outside.example</td>
+                                <td><span class="type-pill">To</span></td>
+                                <td class="visibility">はい</td>
+                                <td class="status-unapproved">ホワイトリスト外</td>
+                            </tr>
+                            <tr>
+                                <td>bob@example.com</td>
+                                <td><span class="type-pill">To</span></td>
+                                <td class="visibility">はい</td>
+                                <td class="status-allowed">許可済み</td>
+                            </tr>
+                            <tr>
+                                <td>team@example.com</td>
+                                <td><span class="type-pill">Cc</span></td>
+                                <td class="visibility">はい</td>
+                                <td class="status-allowed">許可済み</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <footer class="dialog-footer">
+                    <button class="action primary" type="button">内容を確認して送信する</button>
+                    <button class="action" type="button">送信を取り消す</button>
+                </footer>
+            </div>
+        </section>
+        <p class="preview-note">これはレイアウト比較用のプレビューです。ボタンは動作せず、実際のメール送信も行いません。</p>
+    </main>
+    <script>
+        const tabs = [...document.querySelectorAll('[role="tab"]')];
+        const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+
+        function selectTab(selectedTab, moveFocus = false) {
+            for (const tab of tabs) {
+                const selected = tab === selectedTab;
+                tab.setAttribute("aria-selected", String(selected));
+                tab.tabIndex = selected ? 0 : -1;
+                if (selected) {
+                    const panel = document.getElementById(tab.getAttribute("aria-controls"));
+                    for (const candidate of panels) {
+                        candidate.hidden = candidate !== panel;
+                    }
+                }
+            }
+            if (moveFocus) selectedTab.focus();
+        }
+
+        for (const [index, tab] of tabs.entries()) {
+            tab.addEventListener("click", () => selectTab(tab));
+            tab.addEventListener("keydown", (event) => {
+                let nextIndex;
+                if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+                if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+                if (event.key === "Home") nextIndex = 0;
+                if (event.key === "End") nextIndex = tabs.length - 1;
+                if (nextIndex !== undefined) {
+                    event.preventDefault();
+                    selectTab(tabs[nextIndex], true);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
